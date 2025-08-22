@@ -29,6 +29,30 @@ app.get("/", (req, res) => {
   res.send("Mini Blog API is running");
 });
 
+// Lightweight keep-alive endpoint
+app.get("/keep-alive", (req, res) => {
+  res.status(200).send("OK");
+});
+
+// Self-ping every ~14 minutes to keep free instances from idling
+// Works on Render by using the external URL when available
+const KEEP_ALIVE_INTERVAL_MS = 14 * 60 * 1000;
+const BASE_URL =
+  process.env.RENDER_EXTERNAL_URL || // Provided by Render
+  process.env.BASE_URL || // Fallback you can set manually in env
+  `http://localhost:${PORT}`; // Local dev
+
+if (process.env.KEEP_ALIVE !== "false") {
+  setInterval(async () => {
+    try {
+      await fetch(`${BASE_URL}/keep-alive`, { method: "GET" });
+      console.log(`[keep-alive] Pinged ${BASE_URL}/keep-alive`);
+    } catch (err) {
+      console.error("[keep-alive] Ping failed:", err?.message || err);
+    }
+  }, KEEP_ALIVE_INTERVAL_MS);
+}
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
